@@ -14,13 +14,12 @@ import { stitchSchemas } from '../src/stitchSchemas.js';
 import { v4 as uuid } from 'uuid';
 
 describe('merging using type merging', () => {
-  // START
   describe('guild schema', () => {
     let studentSchema = makeExecutableSchema({
       typeDefs: /* GraphQL */ `
         type Query {
           students(input: PageInput!): Students
-          student(id: String!): Student # @merge(keyField: "id")
+          student(id: String!): Student
         }
 
         input PageInput {
@@ -57,16 +56,12 @@ describe('merging using type merging', () => {
         type Query {
           enrollmentsByStudentId(studentId: String!): [Enrollment!]!
           student(id: String!): Student
-          studentsWithEnrollments(ids: [String!]!): Students!
+          studentsWithEnrollments(ids: [String!]!): [Student!]!
         }
 
         type Student {
           id: String!
           enrollments: [Enrollment!]!
-        }
-
-        type Students {
-          data: [Student!]!
         }
 
         type Enrollment {
@@ -193,11 +188,6 @@ describe('merging using type merging', () => {
             return resolverMethods.enrollmentsByStudentId(source, { studentId: source.id } as { studentId: string });
           },
         },
-        Students: {
-          data: (source: any, args: any) => {
-            return resolverMethods.studentsWithEnrollments(source, args.data);
-          },
-        },
         Query: {
           enrollmentsByStudentId: (source: any, args: any) => {
             return resolverMethods.enrollmentsByStudentId(source, args);
@@ -205,11 +195,10 @@ describe('merging using type merging', () => {
           student: (_source: any, args: { id: string }) => {
             return {
               id: args.id,
-              // enrollments: [],
             };
           },
-          studentsWithEnrollments: (source: any, _args: any) => {
-            return resolverMethods.studentsWithEnrollments(source, _args);
+          studentsWithEnrollments: (source: any, args: { ids: string[] }) => {
+            return resolverMethods.studentsWithEnrollments(source, args);
           },
         },
       };
@@ -252,29 +241,11 @@ describe('merging using type merging', () => {
           {
             schema: enrollmentSchema,
             merge: {
-              // Student: {
-              //   fieldName: 'student',
-              //   selectionSet: '{ id }',
-              //   args: originalObject => ({ id: originalObject.id })
-              // },
-              // Student: {
-              //   fieldName: 'enrollmentsByStudentId',
-              //   selectionSet: '{ id }',
-              //   args: originalObject => ({ id: originalObject.id })
-              // },
-
-              // Student: {
-              //   fieldName: 'enrollmentsByStudentId',
-              //   selectionSet: '{ id }',
-              //   key: ({ id }) => id,
-              //   argsFromKeys: ids => ({ ids })
-              // },
-
-              Students: {
+              Student: {
                 fieldName: 'studentsWithEnrollments',
                 selectionSet: '{ id }',
                 key: ({ id }) => id,
-                // argsFromKeys: (ids) => ids.map(i => ({ id: i} ))
+                argsFromKeys: ids => ({ ids }),
               },
             },
             batch: true,
@@ -357,7 +328,6 @@ describe('merging using type merging', () => {
       assertSome(result.data);
       const studentData: any = result.data['student'];
       expect(studentData.__typename).toBe('Student');
-      expect(studentData.enrollments.length).toBe(5);
       expect(enrollmentsByStudentIdSpy).toBeCalledTimes(1);
       expect(studentsWithEnrollmentsSpy).toBeCalledTimes(0);
     });
@@ -381,15 +351,11 @@ describe('merging using type merging', () => {
         schema: stitchedSchema,
         source: query,
       });
-      console.log(result);
       expect(result.errors).toBeUndefined();
       assertSome(result.data);
       const studentData: any = result.data['students'];
       expect(studentData.__typename).toBe('Students');
-      expect(studentData.data[0].enrollments.length).toBe(5);
       expect(studentsWithEnrollmentsSpy).toBeCalledTimes(1);
-      expect(studentsWithEnrollmentsSpy).toBeCalledTimes(0);
     });
   });
-  // END
 });
