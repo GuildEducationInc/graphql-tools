@@ -96,8 +96,5 @@
     "args": [
       "ignore-engines"
     ]
-  },
-  "dependencies": {
-    "bob": "^2.7.0"
   }
 }
