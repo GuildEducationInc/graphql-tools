@@ -54,7 +54,6 @@ describe('merging using type merging', () => {
         scalar AWSDate
 
         type Query {
-          enrollmentsByStudentId(studentId: String!): [Enrollment!]!
           student(id: String!): Student
           studentsWithEnrollments(ids: [String!]!): [Student!]!
         }
@@ -191,9 +190,6 @@ describe('merging using type merging', () => {
           },
         },
         Query: {
-          enrollmentsByStudentId: (source: any, args: any) => {
-            return resolverMethods.enrollmentsByStudentId(source, args);
-          },
           student: (_source: any, args: { id: string }) => {
             return {
               id: args.id,
