@@ -185,7 +185,9 @@ describe('merging using type merging', () => {
       enrollmentsResolvers = {
         Student: {
           enrollments: (source: any, _args: any) => {
-            return resolverMethods.enrollmentsByStudentId(source, { studentId: source.id } as { studentId: string });
+            if (!source.enrollments)
+              return resolverMethods.enrollmentsByStudentId(source, { studentId: source.id } as { studentId: string });
+            else return source.enrollments;
           },
         },
         Query: {
@@ -356,6 +358,7 @@ describe('merging using type merging', () => {
       const studentData: any = result.data['students'];
       expect(studentData.__typename).toBe('Students');
       expect(studentsWithEnrollmentsSpy).toBeCalledTimes(1);
+      expect(enrollmentsByStudentIdSpy).toBeCalledTimes(0);
     });
   });
 });
