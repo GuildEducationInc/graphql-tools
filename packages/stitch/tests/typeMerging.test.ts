@@ -338,6 +338,7 @@ describe('merging using type merging', () => {
               id
               name
               enrollments {
+                studentId
                 courseName
               }
             }
